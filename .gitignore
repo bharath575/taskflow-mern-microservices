@@ -43,3 +43,7 @@ coverage/
 ############################
 .DS_Store
 Thumbs.db
+dist/
+**/*.js
+**/*.js.map
+**/*.d.ts
