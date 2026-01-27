@@ -10,5 +10,12 @@ router.use(
     changeOrigin: true,
   }),
 );
+router.use(
+  "/projects",
+  createProxyMiddleware({
+    target: "http://localhost:5003",
+    changeOrigin: true,
+  }),
+);
 
 export default router;
