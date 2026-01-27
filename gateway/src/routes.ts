@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
-
+import verifyToken from "./middleware/auth.middleware.js";
 const router = Router();
 
 router.use(
@@ -11,7 +11,7 @@ router.use(
   }),
 );
 router.use(
-  "/api/v1/projects",
+  "/api/v1/projects",verifyToken,
   createProxyMiddleware({
     target: "http://localhost:5003",
     changeOrigin: true,
@@ -19,7 +19,7 @@ router.use(
 );
 
 router.use(
-  "/api/v1/tasks",
+  "/api/v1/tasks",verifyToken,
   createProxyMiddleware({
     target: "http://localhost:5004",
     changeOrigin: true,
