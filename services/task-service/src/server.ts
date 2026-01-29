@@ -1,10 +1,10 @@
-import app from "./app.js";
+import server from "./app.js";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const PORT = process.env.PORT || 5003;
+const PORT = process.env.PORT || 5004;
 
-app.listen(PORT, () => {
-  console.log(`✅ Task Service running on ${PORT}`);
+server.listen(PORT, () => {
+  console.log(`🚀 Task Service running with sockets on ${PORT}`);
 });

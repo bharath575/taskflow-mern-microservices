@@ -1,7 +1,10 @@
 import express from "express";
-import cors from 'cors';
+import cors from "cors";
+import http from "http";
+
 import connectDB from "./config/db.js";
 import taskRoutes from "./routes/task.routes.js";
+import { initSocket } from "./socketServer.js";
 
 const app = express();
 
@@ -10,10 +13,15 @@ app.use(express.json());
 
 connectDB();
 
-app.use("/tasks", taskRoutes);
+/* routes */
+app.use("/", taskRoutes);
 
-app.get("/", (_, res) => {
+app.get("/health", (_, res) => {
   res.send("Task service healthy 🚀");
 });
 
-export default app;
+/* ===== SOCKET + SERVER ===== */
+const server = http.createServer(app);
+initSocket(server);
+
+export default server;

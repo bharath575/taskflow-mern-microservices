@@ -10,9 +10,9 @@ app.use(express.json());
 
 connectDB();
 
-app.use("/projects", projectRoutes);
+app.use("/", projectRoutes);
 
-app.get("/", (_, res) => {
+app.get("/health", (_, res) => {
   res.send("Project service healthy 🚀");
 });
 

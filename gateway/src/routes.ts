@@ -1,17 +1,26 @@
 import { Router } from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import verifyToken from "./middleware/auth.middleware.js";
+
 const router = Router();
 
+router.use((req, res, next) => {
+  console.log("🌍 GATEWAY RECEIVED:", req.method, req.url);
+  next();
+});
 router.use(
-  "/api/v1/auth",
+  "/auth",
   createProxyMiddleware({
     target: "http://localhost:5001",
     changeOrigin: true,
+    
+    
   }),
 );
+
 router.use(
-  "/api/v1/projects",verifyToken,
+  "/projects",
+  verifyToken,
   createProxyMiddleware({
     target: "http://localhost:5003",
     changeOrigin: true,
@@ -19,7 +28,8 @@ router.use(
 );
 
 router.use(
-  "/api/v1/tasks",verifyToken,
+  "/tasks",
+  verifyToken,
   createProxyMiddleware({
     target: "http://localhost:5004",
     changeOrigin: true,

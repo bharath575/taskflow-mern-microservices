@@ -6,11 +6,20 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+app.use((req, res, next) => {
+  console.log("🔥 AUTH SERVICE RECEIVED:", req.method, req.url);
+  next();
+});
+
+
+
+
 connectDB();
 
-app.use("/api/v1/auth", authRoutes);
+app.use("/", authRoutes);
 
-app.get("/", (_, res) => {
+app.get("/health", (_, res) => {
   res.send("Auth service healthy 🚀");
 });
 
