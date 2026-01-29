@@ -19,6 +19,9 @@ const taskSchema = new mongoose.Schema(
       enum: ["low", "medium", "high"],
       default: "medium",
     },
+    order: { type: Number, default: 0 },
+    
+dueDate: Date,
   },
   { timestamps: true },
 );

@@ -1,442 +1,3 @@
-// import { useSelector } from "react-redux";
-// import type { RootState } from "../app/store";
-// import { Navigate } from "react-router-dom";
-// import { useEffect, useState } from "react";
-
-// import {
-//   DragDropContext,
-//   Droppable,
-//   Draggable,
-//   type DropResult,
-// } from "@hello-pangea/dnd";
-
-
-
-
-
-// import {
-//   getProjects,
-//   createProject,
-//   deleteProject,
-// } from "../services/projectApi";
-
-// import {
-//   getTasks,
-//   createTask,
-//   updateTask,
-//   deleteTask,
-// } from "../services/taskApi";
-// import socket from "../services/socket";
-// import toast from "react-hot-toast";
-
-// /* ================= TYPES ================= */
-
-// type Project = {
-//   _id: string;
-//   name: string;
-// };
-
-// type Task = {
-//   _id: string;
-//   title: string;
-//   completed: boolean;
-
-//   // ✅ added
-//   status: "todo" | "in-progress" | "done";
-//   priority: "low" | "medium" | "high";
-// };
-
-// /* ================= COMPONENT ================= */
-
-// export default function Dashboard() {
-//   const user = useSelector((state: RootState) => state.auth.user);
-
-//   const [projects, setProjects] = useState<Project[]>([]);
-//   const [tasks, setTasks] = useState<Task[]>([]);
-//   const [selectedProject, setSelectedProject] = useState<string | null>(null);
-
-//   const [projectName, setProjectName] = useState("");
-//   const [taskTitle, setTaskTitle] = useState("");
-
-//   /* ================= LOADERS ================= */
-
-//   useEffect(() => {
-//     if (!user) return;
-
-//     (async () => {
-//       const res = await getProjects();
-//       setProjects(res.data);
-
-//       if (res.data.length) setSelectedProject(res.data[0]._id);
-//     })();
-//   }, [user]);
-
-//   useEffect(() => {
-//     if (!selectedProject) return;
-
-//     (async () => {
-//       const res = await getTasks(selectedProject);
-//       setTasks(res.data);
-
-//       // ✅ ADDED THIS LINE (join socket room)
-//       socket.emit("join-project", selectedProject);
-//     })();
-//   }, [selectedProject]);
-
-//   useEffect(() => {
-//     socket.on("task-created", (task) => {
-//       setTasks((prev) => [...prev, task]);
-//       toast.success("Task created");
-//     });
-
-//     socket.on("task-updated", (task) => {
-//       setTasks((prev) => prev.map((t) => (t._id === task._id ? task : t)));
-//       toast("Task updated");
-//     });
-
-//     socket.on("task-deleted", (id) => {
-//       setTasks((prev) => prev.filter((t) => t._id !== id));
-//       toast.error("Task deleted");
-//     });
-
-//     return () => {
-//       socket.off("task-created");
-//       socket.off("task-updated");
-//       socket.off("task-deleted");
-//     };
-//   }, []);
-
-
-//   /* ================= PROJECT ================= */
-
-//   const handleCreateProject = async () => {
-//     if (!projectName.trim()) return;
-
-//     const res = await createProject({ name: projectName });
-
-//     setProjects((p) => [...p, res.data]);
-//     setSelectedProject(res.data._id);
-//     setProjectName("");
-//   };
-
-//   const handleDeleteProject = async (id: string) => {
-//     await deleteProject(id);
-//     setProjects((p) => p.filter((x) => x._id !== id));
-//     if (selectedProject === id) setSelectedProject(null);
-//   };
-
-//   /* ================= TASK ================= */
-
-//   const handleCreateTask = async () => {
-//     if (!taskTitle.trim() || !selectedProject) return;
-
-//     const res = await createTask({
-//       title: taskTitle,
-//       projectId: selectedProject,
-//       status: "todo",
-//       priority: "medium",
-//     });
-
-//     setTasks((t) => [...t, res.data]);
-//     setTaskTitle("");
-//   };
-
-  
-
-//   const deleteTaskItem = async (id: string) => {
-//     await deleteTask(id);
-//     setTasks((t) => t.filter((x) => x._id !== id));
-//   };
-
-//   /* ================= AUTH ================= */
-
-//   if (!user) return <Navigate to="/login" />;
-
-//   const columns: Record<Task["status"], Task[]> = {
-//     todo: tasks.filter((t) => t.status === "todo"),
-//     "in-progress": tasks.filter((t) => t.status === "in-progress"),
-//     done: tasks.filter((t) => t.status === "done"),
-//   };
-//   const handleDragEnd = async (result: DropResult) => {
-//     const { destination, draggableId } = result;
-
-//     if (!destination) return;
-
-//     const newStatus = destination.droppableId as Task["status"];
-
-//     const task = tasks.find((t) => t._id === draggableId);
-//     if (!task || task.status === newStatus) return;
-
-//     await updateTask(task._id, { status: newStatus });
-
-//     setTasks((prev) =>
-//       prev.map((t) =>
-//         t._id === draggableId ? { ...t, status: newStatus } : t,
-//       ),
-//     );
-//   };
-
-//   /* ================= UI ================= */
-
-//   return (
-//     <div style={styles.wrapper}>
-//       {/* ===== SIDEBAR ===== */}
-//       <aside style={styles.sidebar}>
-//         <h2 style={styles.logo}>TaskFlow</h2>
-//         <div style={styles.user}>👋 {user.name}</div>
-
-//         <div style={styles.sectionTitle}>Projects</div>
-
-//         <div style={styles.projectList}>
-//           {projects.map((p) => (
-//             <div
-//               key={p._id}
-//               onClick={() => setSelectedProject(p._id)}
-//               style={{
-//                 ...styles.projectItem,
-//                 background:
-//                   selectedProject === p._id ? "#eef2ff" : "transparent",
-//               }}
-//             >
-//               <span>{p.name}</span>
-
-//               {/* 🔥 red trash */}
-//               <button
-//                 style={styles.deleteDanger}
-//                 onClick={(e) => {
-//                   e.stopPropagation();
-//                   handleDeleteProject(p._id);
-//                 }}
-//               >
-//                 🗑️
-//               </button>
-//             </div>
-//           ))}
-//         </div>
-
-//         <div style={styles.inputRow}>
-//           <input
-//             style={styles.input}
-//             placeholder="New project"
-//             value={projectName}
-//             onChange={(e) => setProjectName(e.target.value)}
-//           />
-//           <button style={styles.addBtn} onClick={handleCreateProject}>
-//             +
-//           </button>
-//         </div>
-//       </aside>
-
-//       {/* ===== MAIN ===== */}
-//       <main style={styles.main}>
-//         {!selectedProject && (
-//           <div style={styles.empty}>Select a project 👈</div>
-//         )}
-
-//         {selectedProject && (
-//           <>
-//             <h2 style={styles.header}>Tasks</h2>
-
-//             <div style={styles.inputRow}>
-//               <input
-//                 style={styles.input}
-//                 placeholder="Add new task..."
-//                 value={taskTitle}
-//                 onChange={(e) => setTaskTitle(e.target.value)}
-//               />
-//               <button style={styles.addBtn} onClick={handleCreateTask}>
-//                 Add
-//               </button>
-//             </div>
-
-//             {/* ===== TASKS ===== */}
-//             <DragDropContext onDragEnd={handleDragEnd}>
-//               <div style={styles.board}>
-//                 {["todo", "in-progress", "done"].map((status) => (
-//                   <Droppable droppableId={status} key={status}>
-//                     {(provided) => (
-//                       <div
-//                         ref={provided.innerRef}
-//                         {...provided.droppableProps}
-//                         style={styles.column}
-//                       >
-//                         <h3 style={styles.columnTitle}>
-//                           {status.toUpperCase()}
-//                         </h3>
-
-//                         {columns[status as keyof typeof columns].map(
-//                           (t, index) => (
-//                             <Draggable
-//                               key={t._id}
-//                               draggableId={t._id}
-//                               index={index}
-//                             >
-//                               {(provided) => (
-//                                 <div
-//                                   ref={provided.innerRef}
-//                                   {...provided.draggableProps}
-//                                   {...provided.dragHandleProps}
-//                                   style={{
-//                                     ...styles.taskCard,
-//                                     ...provided.draggableProps.style,
-//                                     transform:
-//                                       provided.draggableProps.style?.transform,
-//                                   }}
-//                                 >
-//                                   <div style={{ fontWeight: 600 }}>
-//                                     {t.title}
-//                                   </div>
-
-//                                   <button
-//                                     style={styles.deleteDanger}
-//                                     onClick={() => deleteTaskItem(t._id)}
-//                                   >
-//                                     🗑️
-//                                   </button>
-//                                 </div>
-//                               )}
-//                             </Draggable>
-//                           ),
-//                         )}
-
-//                         {provided.placeholder}
-//                       </div>
-//                     )}
-//                   </Droppable>
-//                 ))}
-//               </div>
-//             </DragDropContext>
-//           </>
-//         )}
-//       </main>
-//     </div>
-//   );
-// }
-
-// /* ================= BADGE HELPERS ================= */
-
-
-
-
-
-// /* ================= STYLES ================= */
-
-// const styles: { [key: string]: React.CSSProperties } = {
-//   wrapper: {
-//     display: "flex",
-//     height: "100vh",
-//     fontFamily: "system-ui, sans-serif",
-//     background: "#f6f7fb",
-//   },
-
-//   sidebar: {
-//     width: 260,
-//     background: "white",
-//     padding: 20,
-//     borderRight: "1px solid #eee",
-//     display: "flex",
-//     flexDirection: "column",
-//   },
-
-//   logo: { fontWeight: 800, fontSize: 20, marginBottom: 20 },
-
-//   user: { fontSize: 14, marginBottom: 20, color: "#666" },
-
-//   sectionTitle: {
-//     fontSize: 12,
-//     fontWeight: 600,
-//     marginBottom: 8,
-//     color: "#888",
-//   },
-
-//   projectList: { flex: 1, overflowY: "auto" },
-
-//   projectItem: {
-//     display: "flex",
-//     justifyContent: "space-between",
-//     padding: 10,
-//     borderRadius: 8,
-//     cursor: "pointer",
-//     marginBottom: 6,
-//   },
-
-//   main: { flex: 1, padding: 40 },
-
-//   header: { marginBottom: 20 },
-
-//   inputRow: { display: "flex", gap: 8, marginBottom: 20 },
-
-//   input: {
-//     flex: 1,
-//     padding: 10,
-//     borderRadius: 8,
-//     border: "1px solid #ddd",
-//   },
-
-//   addBtn: {
-//     padding: "0 16px",
-//     borderRadius: 8,
-//     border: "none",
-//     background: "#6366f1",
-//     color: "white",
-//     cursor: "pointer",
-//   },
-
-//   taskList: { display: "flex", flexDirection: "column", gap: 10 },
-
-//   taskCard: {
-//     background: "white",
-//     padding: 14,
-//     borderRadius: 12,
-//     boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-//     display: "flex",
-//     alignItems: "center",
-//     justifyContent: "space-between",
-
-//     transition: "all 0.18s ease",
-//     cursor: "grab",
-//   },
-
-//   taskCardHover: {
-//     transform: "translateY(-3px)",
-//     boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-//   },
-
-//   taskText: { cursor: "pointer", fontWeight: 600 },
-
-//   badgeRow: { display: "flex", gap: 8, marginTop: 6 },
-
-//   deleteDanger: {
-//     border: "none",
-//     background: "transparent",
-//     cursor: "pointer",
-//     fontSize: 18,
-//     color: "#ef4444",
-//   },
-//   board: {
-//     display: "grid",
-//     gridTemplateColumns: "repeat(3, 1fr)",
-//     gap: 20,
-//     alignItems: "start",
-//   },
-
-//   column: {
-//     background: "#b5b7bf",
-//     padding: 12,
-//     borderRadius: 12,
-//   },
-
-//   columnTitle: {
-//     fontSize: 14,
-//     fontWeight: 700,
-//     marginBottom: 12,
-//   },
-
-//   empty: { textAlign: "center", marginTop: 80, color: "#999" },
-// };
-
-
-
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../app/store";
 import { Navigate, useNavigate } from "react-router-dom";
@@ -476,9 +37,11 @@ type Project = {
 type Task = {
   _id: string;
   title: string;
-  completed: boolean;
   status: "todo" | "in-progress" | "done";
   priority: "low" | "medium" | "high";
+  order: number;
+  description?: string;
+  dueDate?: string;
 };
 
 /* ================= HELPERS ================= */
@@ -494,6 +57,9 @@ const getPriorityColor = (p: Task["priority"]) => {
 export default function Dashboard() {
   const user = useSelector((state: RootState) => state.auth.user);
 
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
@@ -501,15 +67,16 @@ export default function Dashboard() {
   const [projectName, setProjectName] = useState("");
   const [taskTitle, setTaskTitle] = useState("");
 
-  /* ✨ NEW STATES */
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [description, setDescription] = useState("");
+  const [dueDate, setDueDate] = useState("");
+
   const [dark, setDark] = useState(false);
 
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-
-  /* ================= LOADERS ================= */
+  /* ================= LOAD PROJECTS ================= */
 
   useEffect(() => {
     if (!user) return;
@@ -517,10 +84,11 @@ export default function Dashboard() {
     (async () => {
       const res = await getProjects();
       setProjects(res.data);
-
       if (res.data.length) setSelectedProject(res.data[0]._id);
     })();
   }, [user]);
+
+  /* ================= LOAD TASKS ================= */
 
   useEffect(() => {
     if (!selectedProject) return;
@@ -528,7 +96,6 @@ export default function Dashboard() {
     (async () => {
       const res = await getTasks(selectedProject);
       setTasks(res.data);
-
       socket.emit("join-project", selectedProject);
     })();
   }, [selectedProject]);
@@ -536,25 +103,20 @@ export default function Dashboard() {
   /* ================= SOCKET ================= */
 
   useEffect(() => {
-    socket.on("task-created", (task: Task) => {
-      setTasks((prev) => [...prev, task]);
-      toast.success("Task created");
-    });
+    socket.on("task-created", (task: Task) =>
+      setTasks((p) => [...p, task]),
+    );
 
-    socket.on("task-updated", (task: Task) => {
-      setTasks((prev) => prev.map((t) => (t._id === task._id ? task : t)));
-      toast("Task updated");
-    });
+    socket.on("task-updated", (task: Task) =>
+      setTasks((p) => p.map((t) => (t._id === task._id ? task : t))),
+    );
 
-    socket.on("task-deleted", (id: string) => {
-      setTasks((prev) => prev.filter((t) => t._id !== id));
-      toast.error("Task deleted");
-    });
+    socket.on("task-deleted", (id: string) =>
+      setTasks((p) => p.filter((t) => t._id !== id)),
+    );
 
     return () => {
-      socket.off("task-created");
-      socket.off("task-updated");
-      socket.off("task-deleted");
+      socket.removeAllListeners();
     };
   }, []);
 
@@ -564,7 +126,6 @@ export default function Dashboard() {
     if (!projectName.trim()) return;
 
     const res = await createProject({ name: projectName });
-
     setProjects((p) => [...p, res.data]);
     setSelectedProject(res.data._id);
     setProjectName("");
@@ -580,57 +141,53 @@ export default function Dashboard() {
   const handleCreateTask = async () => {
     if (!taskTitle.trim() || !selectedProject) return;
 
-     await createTask({
+    await createTask({
       title: taskTitle,
       projectId: selectedProject,
       status: "todo",
       priority: "medium",
     });
+    toast.success("Task created");
 
-    
     setTaskTitle("");
   };
 
   const deleteTaskItem = async (id: string) => {
     await deleteTask(id);
-    
+    toast.error("Task deleted");
   };
 
-  /* ✨ EDIT TITLE */
   const saveTitle = async (task: Task) => {
-    if (!editValue.trim()) return setEditingId(null);
+    if (!editValue.trim()) return;
 
     await updateTask(task._id, { title: editValue });
-
-    setTasks((prev) =>
-      prev.map((t) =>
-        t._id === task._id ? { ...t, title: editValue } : t,
-      ),
-    );
-
+    toast("Task updated");
     setEditingId(null);
   };
 
-  /* ================= DRAG ================= */
-
-  const columns: Record<Task["status"], Task[]> = {
-    todo: tasks.filter((t) => t.status === "todo"),
-    "in-progress": tasks.filter((t) => t.status === "in-progress"),
-    done: tasks.filter((t) => t.status === "done"),
-  };
+  /* ================= DRAG ORDER ================= */
 
   const handleDragEnd = async (result: DropResult) => {
-    const { destination, draggableId } = result;
-
+    const {  destination, draggableId } = result;
     if (!destination) return;
 
-    const newStatus = destination.droppableId as Task["status"];
+    const updated = [...tasks];
+    const index = updated.findIndex((t) => t._id === draggableId);
 
-    const task = tasks.find((t) => t._id === draggableId);
-    if (!task || task.status === newStatus) return;
+    const [moved] = updated.splice(index, 1);
+    moved.status = destination.droppableId as Task["status"];
 
-    await updateTask(task._id, { status: newStatus });
+    updated.splice(destination.index, 0, moved);
 
+    const reordered = updated.map((t, i) => ({ ...t, order: i }));
+    setTasks(reordered);
+
+    await Promise.all(
+      reordered.map((t) =>
+        updateTask(t._id, { status: t.status, order: t.order }),
+      ),
+    );
+     toast.success("Task moved");
   };
 
   /* ================= AUTH ================= */
@@ -642,162 +199,247 @@ export default function Dashboard() {
     navigate("/login");
   };
 
-  /* ================= UI ================= */
+  const columns: Record<Task["status"], Task[]> = {
+    todo: tasks
+      .filter((t) => t.status === "todo")
+      .sort((a, b) => a.order - b.order),
 
-  return (
-    <div
-      style={{
-        ...styles.wrapper,
-        background: dark ? "#111827" : "#f6f7fb",
-        color: dark ? "white" : "black",
-      }}
-    >
-      {/* ===== SIDEBAR ===== */}
-      <aside style={styles.sidebar}>
-        <h2 style={styles.logo}>TaskFlow</h2>
+    "in-progress": tasks
+      .filter((t) => t.status === "in-progress")
+      .sort((a, b) => a.order - b.order),
 
-        <button style={styles.themeBtn} onClick={() => setDark(!dark)}>
-          {dark ? "☀️" : "🌙"}
-        </button>
+    done: tasks
+      .filter((t) => t.status === "done")
+      .sort((a, b) => a.order - b.order),
+  };
 
-        <div style={styles.userRow}>
-          <span>👋 {user.name}</span>
+   return (
+     <div
+       style={{
+         ...styles.wrapper,
+         background: dark ? "#111827" : "#f6f7fb",
+         color: dark ? "white" : "black",
+       }}
+     >
+       {/* ================= SIDEBAR ================= */}
 
-          <button style={styles.logoutBtn} onClick={handleLogout}>
-            🚪 Logout
-          </button>
-        </div>
+       <aside style={styles.sidebar}>
+         <h2 style={styles.logo}>TaskFlow</h2>
 
-        {projects.map((p) => (
-          <div
-            key={p._id}
-            style={styles.projectItem}
-            onClick={() => setSelectedProject(p._id)}
-          >
-            {p.name}
-            <button
-              style={styles.deleteDanger}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteProject(p._id);
-              }}
-            >
-              🗑️
-            </button>
-          </div>
-        ))}
-        <div style={styles.inputRow}>
-          <input
-            style={styles.input}
-            placeholder="New project"
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
-          />
-          <button style={styles.addBtn} onClick={handleCreateProject}>
-            +
-          </button>
-        </div>
-      </aside>
+         <button style={styles.themeBtn} onClick={() => setDark(!dark)}>
+           {dark ? "☀️" : "🌙"}
+         </button>
 
-      {/* ===== MAIN ===== */}
-      <main style={styles.main}>
-        <div style={styles.inputRow}>
-          <input
-            style={styles.input}
-            placeholder="Add new task..."
-            value={taskTitle}
-            onChange={(e) => setTaskTitle(e.target.value)}
-          />
-          <button style={styles.addBtn} onClick={handleCreateTask}>
-            Add
-          </button>
-        </div>
+         <div style={styles.userRow}>
+           <span>👋 {user.name}</span>
 
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <div style={styles.board}>
-            {(Object.keys(columns) as Task["status"][]).map((status) => (
-              <Droppable droppableId={status} key={status}>
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    style={styles.column}
-                  >
-                    <h3>{status.toUpperCase()}</h3>
+           <button style={styles.logoutBtn} onClick={handleLogout}>
+             🚪 Logout
+           </button>
+         </div>
 
-                    {columns[status].map((t, index) => (
-                      <Draggable key={t._id} draggableId={t._id} index={index}>
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            style={{
-                              ...styles.taskCard,
-                              ...provided.draggableProps.style,
-                            }}
-                          >
-                            {editingId === t._id ? (
-                              <input
-                                autoFocus
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                onBlur={() => saveTitle(t)}
-                                onKeyDown={(e) =>
-                                  e.key === "Enter" && saveTitle(t)
-                                }
-                                style={styles.editInput}
-                              />
-                            ) : (
-                              <div
-                                onDoubleClick={() => {
-                                  setEditingId(t._id);
-                                  setEditValue(t.title);
-                                }}
-                              >
-                                {t.title}
-                              </div>
-                            )}
+         {/* PROJECT LIST */}
+         {projects.map((p) => (
+           <div
+             key={p._id}
+             onClick={() => setSelectedProject(p._id)}
+             style={{
+               ...styles.projectItem,
+               cursor: "pointer",
+               background:
+                 selectedProject === p._id ? "#6366f1" : "transparent",
+               color: selectedProject === p._id ? "white" : "black",
+             }}
+           >
+             {p.name}
 
-                            <span
-                              style={{
-                                ...styles.badge,
-                                background: getPriorityColor(t.priority),
-                              }}
-                            >
-                              {t.priority}
-                            </span>
+             <button
+               style={styles.deleteDanger}
+               onClick={(e) => {
+                 e.stopPropagation();
+                 handleDeleteProject(p._id);
+               }}
+             >
+               🗑️
+             </button>
+           </div>
+         ))}
 
-                            <button
-                              style={styles.deleteDanger}
-                              onClick={() => deleteTaskItem(t._id)}
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
+         <div style={styles.inputRow}>
+           <input
+             style={styles.input}
+             placeholder="New project"
+             value={projectName}
+             onChange={(e) => setProjectName(e.target.value)}
+           />
 
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            ))}
-          </div>
-        </DragDropContext>
-      </main>
-    </div>
-  );
+           <button style={styles.addBtn} onClick={handleCreateProject}>
+             +
+           </button>
+         </div>
+       </aside>
+
+       {/* ================= MAIN ================= */}
+
+       <main style={styles.main}>
+         {/* ADD TASK */}
+         <div style={styles.inputRow}>
+           <input
+             style={styles.input}
+             placeholder="Add new task..."
+             value={taskTitle}
+             onChange={(e) => setTaskTitle(e.target.value)}
+           />
+
+           <button style={styles.addBtn} onClick={handleCreateTask}>
+             Add
+           </button>
+         </div>
+
+         <DragDropContext onDragEnd={handleDragEnd}>
+           <div style={styles.board}>
+             {(Object.keys(columns) as Task["status"][]).map((status) => (
+               <Droppable key={status} droppableId={status}>
+                 {(provided) => (
+                   <div
+                     ref={provided.innerRef}
+                     {...provided.droppableProps}
+                     style={styles.column}
+                   >
+                     <h3>{status.toUpperCase()}</h3>
+
+                     {columns[status].map((t, index) => (
+                       <Draggable key={t._id} draggableId={t._id} index={index}>
+                         {(provided) => (
+                           <div
+                             ref={provided.innerRef}
+                             {...provided.draggableProps}
+                             {...provided.dragHandleProps}
+                             style={{
+                               ...styles.taskCard,
+                               ...provided.draggableProps.style,
+                               cursor: "pointer",
+                             }}
+                             onClick={() => {
+                               setSelectedTask(t);
+                               setDescription(t.description || "");
+                               setDueDate(t.dueDate || "");
+                             }}
+                           >
+                             {/* TITLE */}
+                             {editingId === t._id ? (
+                               <input
+                                 autoFocus
+                                 value={editValue}
+                                 onChange={(e) => setEditValue(e.target.value)}
+                                 onBlur={() => saveTitle(t)}
+                                 onKeyDown={(e) =>
+                                   e.key === "Enter" && saveTitle(t)
+                                 }
+                                 style={styles.editInput}
+                               />
+                             ) : (
+                               <span
+                                 onDoubleClick={(e) => {
+                                   e.stopPropagation();
+                                   setEditingId(t._id);
+                                   setEditValue(t.title);
+                                 }}
+                               >
+                                 {t.title}
+                               </span>
+                             )}
+
+                             {/* PRIORITY */}
+                             <select
+                               value={t.priority}
+                               onClick={(e) => e.stopPropagation()}
+                               onChange={(e) =>
+                                 updateTask(t._id, {
+                                   priority: e.target.value,
+                                 })
+                               }
+                               style={{
+                                 ...styles.badge,
+                                 background: getPriorityColor(t.priority),
+                               }}
+                             >
+                               <option value="low">Low</option>
+                               <option value="medium">Medium</option>
+                               <option value="high">High</option>
+                             </select>
+
+                             {/* DELETE */}
+                             <button
+                               style={styles.deleteDanger}
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 deleteTaskItem(t._id);
+                               }}
+                             >
+                               🗑️
+                             </button>
+                           </div>
+                         )}
+                       </Draggable>
+                     ))}
+
+                     {provided.placeholder}
+                   </div>
+                 )}
+               </Droppable>
+             ))}
+           </div>
+         </DragDropContext>
+
+         {/* ================= TASK MODAL ================= */}
+
+         {selectedTask && (
+           <div
+             style={styles.modalOverlay}
+             onClick={() => setSelectedTask(null)}
+           >
+             <div style={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+               <h3>{selectedTask.title}</h3>
+
+               <textarea
+                 style={styles.textarea}
+                 placeholder="Description"
+                 value={description}
+                 onChange={(e) => setDescription(e.target.value)}
+               />
+
+               <input
+                 type="date"
+                 value={dueDate}
+                 onChange={(e) => setDueDate(e.target.value)}
+               />
+
+               <button
+                 onClick={async () => {
+                   await updateTask(selectedTask._id, {
+                     description,
+                     dueDate,
+                   });
+
+                   setSelectedTask(null);
+                 }}
+               >
+                 Save
+               </button>
+             </div>
+           </div>
+         )}
+       </main>
+     </div>
+   );
+
+
 }
-
 /* ================= STYLES ================= */
 
 const styles: Record<string, React.CSSProperties> = {
-  wrapper: {
-    display: "flex",
-    minHeight: "100vh",
-  },
+  wrapper: { display: "flex", minHeight: "100vh" },
 
   sidebar: {
     width: 260,
@@ -810,7 +452,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   logo: { fontWeight: 800 },
 
-  main: { flex: 1, padding: 40, background: "#f6f7fb" },
+  main: { flex: 1, padding: 40 },
 
   inputRow: { display: "flex", gap: 8, marginBottom: 20 },
 
@@ -848,11 +490,8 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 10,
     marginBottom: 8,
     display: "flex",
-    gap: 8,
-    alignItems: "center",
     justifyContent: "space-between",
-    transition: "0.2s",
-    cursor: "grab",
+    alignItems: "center",
   },
 
   badge: {
@@ -869,24 +508,18 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#ef4444",
   },
 
-  themeBtn: {
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-  },
+  themeBtn: { background: "transparent", border: "none", cursor: "pointer" },
 
   editInput: {
     flex: 1,
     borderRadius: 6,
     border: "1px solid #ddd",
   },
+
   userRow: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
-    fontSize: 14,
-    color: "#666",
   },
 
   logoutBtn: {
@@ -895,8 +528,38 @@ const styles: Record<string, React.CSSProperties> = {
     color: "white",
     borderRadius: 8,
     padding: "4px 8px",
-    fontSize: 12,
-    cursor: "pointer",
+  },
+
+  projectItem: {
+    padding: 6,
+    borderRadius: 6,
+  },
+
+  modalOverlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,0.4)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  modalBox: {
+    background: "white",
+    padding: 20,
+    borderRadius: 12,
+    width: 350,
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+  },
+
+  textarea: {
+    minHeight: 100,
+    borderRadius: 8,
+    border: "1px solid #ddd",
+    padding: 8,
   },
 };
+
 

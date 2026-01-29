@@ -89,7 +89,7 @@ export const getTasks = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "projectId required" });
     }
 
-    const tasks = await Task.find({ projectId });
+    const tasks = await Task.find({ projectId }).sort({ order: 1 });
 
     res.json(tasks);
   } catch (err) {
