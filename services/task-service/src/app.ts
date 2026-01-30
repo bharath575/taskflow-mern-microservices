@@ -4,6 +4,7 @@ import http from "http";
 
 import connectDB from "./config/db.js";
 import taskRoutes from "./routes/task.routes.js";
+import commentsRoutes from "./routes/comment.routes.js";
 import { initSocket } from "./socketServer.js";
 
 const app = express();
@@ -15,6 +16,7 @@ connectDB();
 
 /* routes */
 app.use("/", taskRoutes);
+//app.use("/comments", commentsRoutes);
 
 app.get("/health", (_, res) => {
   res.send("Task service healthy 🚀");

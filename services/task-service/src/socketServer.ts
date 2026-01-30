@@ -25,6 +25,10 @@ export const initSocket = (server: HttpServer) => {
       console.log(`📤 Left project room: ${projectId}`);
     });
 
+    io.on("connection", (socket) => {
+      console.log("🟢 CONNECTED:", socket.id);
+    });
+
     socket.on("disconnect", () => {
       console.log("🔴 Task socket disconnected:", socket.id);
     });
